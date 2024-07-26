@@ -163,4 +163,4 @@ export const get = query({
         const board = ctx.db.get(args.id);
         return board;
     }
-})
+}) 

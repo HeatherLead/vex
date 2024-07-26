@@ -41,7 +41,10 @@ export async function POST(request:NextRequest) {
         session.allow(room, session.FULL_ACCESS)
     }
      
-    const {status , body} = await session.authorize()
-    return NextResponse.json(body, {status})
+    const { status, body } = await session.authorize()
+
+    const object = JSON.parse(body)
+    return NextResponse.json(object, { status })
+
     
 } 
