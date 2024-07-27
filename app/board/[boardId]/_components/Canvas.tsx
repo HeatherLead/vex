@@ -32,6 +32,7 @@ import {
 import { LiveObject } from "@liveblocks/client";
 import LayerPreview from "./LayerPreview";
 import SelectionBox from "./SelectionBox";
+import SelectionTools from "./SelectionTools";
 
 const MAX_LAYERS = 100;
 
@@ -48,9 +49,9 @@ const Canvas = ({ boardId }: CanvasProps) => {
 
   const [camara, setCamara] = useState<camara>({ x: 0, y: 0 });
   const [lastUseColor, setLastUseColor] = useState<Color>({
-    r: 0,
-    g: 0,
-    b: 0,
+    r: 255,
+    g: 255,
+    b: 255,
   });
 
   const history = useHistory();
@@ -92,6 +93,30 @@ const Canvas = ({ boardId }: CanvasProps) => {
     [lastUseColor]
   );
 
+  const translateSelectedLayers = useMutation(
+    ({ storage, self }, point: Point) => {
+      if (canvasState.mode !== CanvasMode.Translating) {
+        return;
+      }
+      const offSet = {
+        x: point.x - canvasState.current.x,
+        y: point.y - canvasState.current.y,
+      };
+      const liveLayers = storage.get("layers");
+      for (const id of self.presence.selection) {
+        const layer = liveLayers.get(id);
+        if (layer) {
+          layer.update({
+            x: layer.get("x") + offSet.x,
+            y: layer.get("y") + offSet.y,
+          });
+        }
+      }
+      setCanvasState({ mode: CanvasMode.Translating, current: point });
+    },
+    [canvasState]
+  );
+
   const resizeSelectedLayer = useMutation(
     ({ storage, self }, point: Point) => {
       if (canvasState.mode !== CanvasMode.Resizing) {
@@ -111,6 +136,12 @@ const Canvas = ({ boardId }: CanvasProps) => {
     },
     [canvasState]
   );
+
+  const unSelectLayer = useMutation(({ self, setMyPresence }) => {
+    if (self.presence.selection.length > 0) {
+      setMyPresence({ selection: [] }, { addToHistory: true });
+    }
+  }, []);
 
   const onResizeHandlePointerDown = useCallback(
     (corner: Side, initialBounds: XYWH) => {
@@ -133,13 +164,15 @@ const Canvas = ({ boardId }: CanvasProps) => {
       e.preventDefault();
       const current = pointerEventToCanvasPoint(e, camara);
 
-      if (canvasState.mode === CanvasMode.Resizing) {
+      if (canvasState.mode === CanvasMode.Translating) {
+        translateSelectedLayers(current);
+      } else if (canvasState.mode === CanvasMode.Resizing) {
         resizeSelectedLayer(current);
       }
 
       setMyPresence({ cursor: current });
     },
-    [canvasState, resizeSelectedLayer, camara]
+    [canvasState, resizeSelectedLayer, camara, translateSelectedLayers]
   );
 
   const onPointerLeave = useMutation(
@@ -154,7 +187,13 @@ const Canvas = ({ boardId }: CanvasProps) => {
     ({}, e) => {
       const point = pointerEventToCanvasPoint(e, camara);
 
-      if (canvasState.mode === CanvasMode.Inserting) {
+      if (
+        canvasState.mode === CanvasMode.None ||
+        canvasState.mode === CanvasMode.Pressing
+      ) {
+        unSelectLayer();
+        setCanvasState({ mode: CanvasMode.None });
+      } else if (canvasState.mode === CanvasMode.Inserting) {
         insertLayer(canvasState.layerType, point);
       } else {
         setCanvasState({
@@ -163,7 +202,19 @@ const Canvas = ({ boardId }: CanvasProps) => {
       }
       history.resume();
     },
-    [camara, canvasState, history]
+    [camara, canvasState, history, unSelectLayer]
+  );
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      const point = pointerEventToCanvasPoint(e, camara);
+      if (canvasState.mode === CanvasMode.Inserting) {
+        return;
+      }
+
+      setCanvasState({ origin: point, mode: CanvasMode.Pressing });
+    },
+    [camara, canvasState.mode, setCanvasState]
   );
 
   const selections = useOthersMapped((other) => {
@@ -215,11 +266,13 @@ const Canvas = ({ boardId }: CanvasProps) => {
         undo={history.undo}
         redo={history.redo}
       />
+      <SelectionTools camara={camara} setLastUseColor={setLastUseColor} />
       <svg
         onWheel={onWheel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
         onPointerUp={onPointerUp}
+        onPointerDown={onPointerDown}
         className=" w-[98vw] h-[100vh] "
       >
         <g

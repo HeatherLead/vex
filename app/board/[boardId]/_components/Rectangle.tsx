@@ -21,7 +21,7 @@ const Rectangle = ({
       onPointerDown={(e) => {
         onLayerPointerDown(e, id);
       }}
-      className=" drop-shadow-md "
+      className=" drop-shadow-md  "
       style={{ transform: `translate(${x}px,${y}px)` }}
       x={0}
       y={0}
