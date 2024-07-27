@@ -126,6 +126,26 @@ const Canvas = ({ boardId }: CanvasProps) => {
     other.presence.selection;
   });
 
+  const onLayerPointerDown = useMutation(
+    ({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
+      if (
+        canvasState.mode === CanvasMode.Pencil ||
+        canvasState.mode === CanvasMode.Inserting
+      ) {
+        return;
+      }
+      history.pause();
+      e.stopPropagation();
+      const point = pointerEventToCanvasPoint(e, camara);
+
+      if (!self.presence.selection.includes(layerId)) {
+        setMyPresence({ selection: [layerId] }, { addToHistory: true });
+      }
+      setCanvasState({ mode: CanvasMode.Translating, current: point });
+    },
+    [setCanvasState, camara, history, canvasState.mode]
+  );
+
   const layerIdsToSelection = useMemo(() => {
     const layerIdsToSelection: Record<string, string> = {};
 
@@ -167,7 +187,7 @@ const Canvas = ({ boardId }: CanvasProps) => {
             <LayerPreview
               key={layerId}
               id={layerId}
-              onLayerPointerDown={() => {}}
+              onLayerPointerDown={onLayerPointerDown}
               selectionColor={layerIdsToSelection[layerId]}
             />
           ))}

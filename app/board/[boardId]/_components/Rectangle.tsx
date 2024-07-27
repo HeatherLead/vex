@@ -1,4 +1,5 @@
 "use client";
+import { colorToCss } from "@/lib/utils";
 import { ReactangleLayer } from "@/types/Canvas";
 import React from "react";
 
@@ -27,8 +28,8 @@ const Rectangle = ({
       width={width}
       height={height}
       strokeWidth={1}
-      fill="#000"
-      stroke="transparent"
+      fill={fill ? colorToCss(fill) : "64C2DB"}
+      stroke={selectionColor || "transparent"}
     />
   );
 };
