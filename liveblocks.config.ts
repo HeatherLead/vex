@@ -15,9 +15,11 @@ const client = createClient({
 // `user.presence` property. Must be JSON-serializable.
 type Presence = {
   cursor: { x: number, y: number } | null,
-  selection: string[]
+  selection: string[],
+  pencilDraft: [x : number, y : number, pressure : number][] | null,
+  penColor: Color | null
 };
-type UserMeta = { 
+type UserMeta = {  
   id?: string,
   info?:{
     name?: string,
