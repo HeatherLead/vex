@@ -115,3 +115,5 @@ export type camara = {
     x: number;
     y: number;
 }
+
+export type Layer = ReactangleLayer | EllipseLayer | PathLayer | TextLayer |NoteLayer

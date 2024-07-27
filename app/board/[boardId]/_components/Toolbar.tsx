@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import ToolButton from "./tool-button";
 import { CanvasMode, CanvasState, LayerType } from "@/types/Canvas";
