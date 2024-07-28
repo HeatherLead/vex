@@ -22,11 +22,14 @@ import {
   useStorage,
   useOthers,
   useOthersMapped,
+  useSelf,
 } from "@/liveblocks.config";
 import { CursorsPresence } from "./CursorsPresence";
 import {
+  colorToCss,
   connectionIdToColor,
   findIntersectingLayersWithRectangle,
+  penPointsToPathLayer,
   pointerEventToCanvasPoint,
   resizeBounds,
 } from "@/lib/utils";
@@ -34,6 +37,8 @@ import { LiveObject } from "@liveblocks/client";
 import LayerPreview from "./LayerPreview";
 import SelectionBox from "./SelectionBox";
 import SelectionTools from "./SelectionTools";
+import { Pen } from "lucide-react";
+import Path from "./Path";
 
 const MAX_LAYERS = 100;
 
@@ -43,6 +48,8 @@ interface CanvasProps {
 
 const Canvas = ({ boardId }: CanvasProps) => {
   const layerIds = useStorage((root) => root.layerIds);
+
+  const pencilDraft = useSelf((me) => me.presence.pencilDraft);
 
   const [canvasState, setCanvasState] = useState<CanvasState>({
     mode: CanvasMode.None,
@@ -170,20 +177,35 @@ const Canvas = ({ boardId }: CanvasProps) => {
     [canvasState.mode]
   );
 
-  const insertPath = useMutation(({ self, setMyPresence, storage }) => {
-    const liveLayers = storage.get("layers");
-    const { pencilDraft } = self.presence;
-    if (
-      pencilDraft == null ||
-      pencilDraft.length < 2 ||
-      liveLayers.size >= MAX_LAYERS
-    ) {
-      setMyPresence({ pencilDraft: null });
-      return;
-    }
+  const insertPath = useMutation(
+    ({ self, setMyPresence, storage }) => {
+      const liveLayers = storage.get("layers");
+      const { pencilDraft } = self.presence;
+      if (
+        pencilDraft == null ||
+        pencilDraft.length < 2 ||
+        liveLayers.size >= MAX_LAYERS
+      ) {
+        setMyPresence({ pencilDraft: null });
+        return;
+      }
 
-    const id = nanoid();
-  }, []);
+      const id = nanoid();
+      liveLayers.set(
+        id,
+        new LiveObject(penPointsToPathLayer(pencilDraft, lastUseColor))
+      );
+
+      const liveLayerIds = storage.get("layerIds");
+      liveLayerIds.push(id);
+
+      setMyPresence({
+        pencilDraft: null,
+      });
+      setCanvasState({ mode: CanvasMode.Pencil });
+    },
+    [lastUseColor]
+  );
 
   const startDrawing = useMutation(
     ({ setMyPresence }, point: Point, pressure: number) => {
@@ -407,6 +429,14 @@ const Canvas = ({ boardId }: CanvasProps) => {
               />
             )}
           <CursorsPresence />
+          {pencilDraft != null && pencilDraft.length > 0 && (
+            <Path
+              fill={colorToCss(lastUseColor)}
+              points={pencilDraft}
+              x={0}
+              y={0}
+            />
+          )}
         </g>
       </svg>
     </main>
