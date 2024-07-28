@@ -1,5 +1,5 @@
 "use client";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { nanoid } from "nanoid";
 import {
   camara,
@@ -39,6 +39,8 @@ import SelectionBox from "./SelectionBox";
 import SelectionTools from "./SelectionTools";
 import { Pen } from "lucide-react";
 import Path from "./Path";
+import { useDisableScrollBounce } from "@/hooks/use-disable-scroll-bounce";
+import { useDeleteLayers } from "@/hooks/use-delete";
 
 const MAX_LAYERS = 100;
 
@@ -61,6 +63,8 @@ const Canvas = ({ boardId }: CanvasProps) => {
     g: 255,
     b: 255,
   });
+
+  useDisableScrollBounce();
 
   const history = useHistory();
   const canUndo = useCanUndo();
@@ -382,6 +386,29 @@ const Canvas = ({ boardId }: CanvasProps) => {
     }
     return layerIdsToSelection;
   }, [selections]);
+
+  const deleteLayers = useDeleteLayers();
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      switch (e.key) {
+        case "z": {
+          if (e.ctrlKey || e.metaKey) {
+            if (e.shiftKey) {
+              history.redo();
+            } else {
+              history.undo();
+            }
+            break;
+          }
+        }
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [deleteLayers, history]);
 
   return (
     <main className=" h-full w-full  relative  bg-neutral-100  touch-none">
