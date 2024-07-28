@@ -11,7 +11,7 @@ interface ItemProps {
   imageUrl: string;
 }
 
-const item = ({ id, name, imageUrl }: ItemProps) => {
+const Item = ({ id, name, imageUrl }: ItemProps) => {
   const { organization } = useOrganization();
   const { setActive } = useOrganizationList();
 
@@ -39,4 +39,4 @@ const item = ({ id, name, imageUrl }: ItemProps) => {
   );
 };
 
-export default item;
+export default Item;
