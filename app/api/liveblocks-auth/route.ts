@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server"
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
 
 const liveblocks = new Liveblocks({
-    secret:"sk_dev_QxoITFOttgcah19WlcrwuMaevW_KnCla_hHMmrVuOAuCLOO5Uioym_T7mZp2FfKF"
+    secret:process.env.LIVEBLOCK_SECRET_KEY!
 })
 
 export async function POST(request:NextRequest) {
