@@ -25,7 +25,7 @@ const OrgSidebar = () => {
           <span
             className={cn(" font-semibold text-2xl ml-2", poppins.className)}
           >
-            MIRO
+            VEX
           </span>
         </div>
       </Link>
